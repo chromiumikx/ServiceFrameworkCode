@@ -53,3 +53,6 @@ class ClientConnect:
     #TODO:向外提供传感器加速度的原始数据；实现：等主要部分完成再加上，需要确定发送的命令，服务器上接受的命令和发送的数据要做添加
     def getACCs(self):
         pass
+
+    def getRots(self):
+        pass

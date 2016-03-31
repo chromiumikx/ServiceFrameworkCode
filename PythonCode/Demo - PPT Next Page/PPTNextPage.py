@@ -13,8 +13,9 @@ t0=time.clock()
 while True:
     Num=None
     Num=myclient.getGesture()
-    if Num == "No Connect":
-        print("No Connect")
+    dt=time.clock()-t0
+    if dt>60 or Num == "No Connect":
+        print("Release connect and quit")
         break
     if Num == "1":
         win32api.keybd_event(32,0,0,0)  #空格键位码是32
