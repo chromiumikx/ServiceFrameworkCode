@@ -136,7 +136,7 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                     #print("Get cmd of Gesture")
                     conn.sendall((str(GestureNum)).encode())
                 else:
-                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令
+                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理
                     conn.sendall(("NA").encode())
 
                 #time.sleep(0.05)#为让线程不占用全部cpu

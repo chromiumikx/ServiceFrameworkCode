@@ -25,28 +25,21 @@ def openFilegetData(FilePath):
     return data
 
 ##——————————读取训练好的权重矩阵——————————————————
-def readWeights(WeightsPath1, WeightsPath2):
-    f=open(WeightsPath1,'r')
-    ff=f.readlines()
-    
-    ss=[]
-    for line in ff:
-        ss.append(float(line[:-1]))
-    
-    f=open(WeightsPath2,'r')
-    ff=f.readlines()
-    
-    ss1=[]
-    for line in ff:
-        sss=line.split(" ",39)
-        for i in range(40):
-            sss[i]=float(sss[i])
-        
-        ss1.append(sss)
-    
-    return (ss, ss1)
+def readWeights(WeightsPaths):
+    s=[]
+    for path in WeightsPaths:
+        f=open(path,'r')
+        ff=f.readlines()
+        ss=[]
+        for line in ff:
+            sss=line.split(" ")
+            sss.pop(len(sss)-1)
+            for i in range(len(sss)):
+                sss[i]=float(sss[i])
+            ss.append(sss)
+        s.append(ss)
+    return (s)
 
 if __name__ == "__main__":
     data = openFilegetData("Circle.txt")
-    #readWeights("weightsyn1.txt")
-    d1, d0 = readWeights("weightsyn1.txt","weightsyn0.txt")
+    [c,d] = readWeights(["weightsyn0.txt","weightsyn1.txt"])

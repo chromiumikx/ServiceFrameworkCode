@@ -63,7 +63,6 @@ def translateStr(Str):
     return Temp
 
 def judgeConnectedCOMNum():
-
     pass
 
 if __name__ == "__main__":

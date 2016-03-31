@@ -11,7 +11,28 @@ def trainNeuralNetwork(PathList):
         data=data+(openFilegetData(P))
 
     x=np.array(data)
-    y=np.array([[1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]).T
+    y=np.array([[0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,1],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        [0,0,0],
+        ])
 
     np.random.seed(1)
 
@@ -19,7 +40,7 @@ def trainNeuralNetwork(PathList):
     #syn0维数是40*40，syn1是40*1
     InputPoints=40
     InnerLayerPoints=40
-    OutputPoints=1
+    OutputPoints=3
     syn0=2*np.random.random((InputPoints,InnerLayerPoints))-1
     syn1=2*np.random.random((InnerLayerPoints,OutputPoints))-1
 
@@ -46,18 +67,23 @@ def trainNeuralNetwork(PathList):
         syn1+=l1.T.dot(l2_delta)
         syn0+=l0.T.dot(l1_delta)
 
-
-    writefile = open("weightsyn1.txt", "w")
-    for i in range(40):
-        writefile.write(str(syn1[i][0])+"\n")
-    writefile.close()
-    
-    writefile2 = open("weightsyn0.txt", "w")
+    writefile0 = open("weightsyn0.txt", "w")
     for i in range(40):
         for j in range(40):
-            writefile2.write(str(syn0[i][j])+" ")
-        writefile2.write("\n")
-    writefile2.close()
+            writefile0.write(str(syn0[i][j])+" ")
+        writefile0.write("\n")
+    writefile0.close()
+
+    writefile1 = open("weightsyn1.txt", "w")
+    for i in range(40):
+        for j in range(3):
+            writefile1.write(str(syn1[i][j])+" ")
+        writefile1.write("\n")
+    writefile1.close()
     
     print(l2)
     return (syn0,syn1)
+
+
+if __name__=="__main__":
+    trainNeuralNetwork(["Circle.txt","UpDown.txt","LeftRight.txt"])
