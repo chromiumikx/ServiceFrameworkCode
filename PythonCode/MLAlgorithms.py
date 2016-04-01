@@ -10,34 +10,17 @@ def trainNeuralNetwork(PathList):
     for P in PathList:
         data=data+(openFilegetData(P))
 
+    ##快速生成标准输出矩阵（即分类标记）
+    StandardOutput=[[0,0,0]]*21
+    StandardOutput[0:7]=[[0,0,1]]*7
+
     x=np.array(data)
-    y=np.array([[0,0,1],
-        [0,0,1],
-        [0,0,1],
-        [0,0,1],
-        [0,0,1],
-        [0,0,1],
-        [0,0,1],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        [0,0,0],
-        ])
+    y=np.array(StandardOutput)
 
     np.random.seed(1)
 
     #整个学习网络由两个（可修改成其他深度）权重矩阵（主要）构成，
-    #syn0维数是40*40，syn1是40*1
+    #syn0维数是40*40，syn1是40*3
     InputPoints=40
     InnerLayerPoints=40
     OutputPoints=3

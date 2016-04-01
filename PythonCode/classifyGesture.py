@@ -15,6 +15,7 @@ def classifyGesture():
         print(threading.currentThread().getName()+' On')#打印当前线程名
         #___________________________Classifier_________________________
         l0=SingleGroupData
+        SingleGroupData =[[0]*40]##取完数后，将其置零
         l1=nonlin(np.dot(l0,syn0))
         l2=nonlin(np.dot(l1,syn1))
         Output=l2
