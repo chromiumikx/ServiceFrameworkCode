@@ -1,6 +1,10 @@
 ##____________________包含串口读取以及数据解析两个方法________________________
 ##
-##注注注注：数据的帧设计可以不用“-”负号，使用多一位作为标志位，这样更容易处理，降低处理时间和性能消耗
+##注注注注：数据的帧设计可以不用“-”负号，使用多一位作为标志位，这样更容易处理，
+##降低处理时间和性能消耗
+
+##注意：不一定用符号“h”作为帧分解，转为十六进制传输后，
+##可以以某个较大的十六进制数作为分解更简单
 ##
 ##注意：某些全局变量，为全局共享资源，如：
 ##      FrameperGroup      
@@ -33,8 +37,12 @@ def readCom(ComNumber="COM3"):
                     if ch == b'h':
                         print("Tag break")
                         break
-                SingleGroupStr=com.read(10*FrameperGroup-1)#每帧数据由10个字符组成共13帧，预留一帧同步
-                SingleGroupData=translateStr(SingleGroupStr)
+
+                testFrameStr=com.read(9)#取一帧解析（或不用）判断
+                testFrameData=strFramesToInt(testFrame)
+                if isReceive(testFrameData):
+                    SingleGroupStr=com.read(10*FrameperGroup-1)#每帧数据由10个字符组成共13帧，预留一帧同步
+                    SingleGroupData=translateStr(SingleGroupStr)
                 if SingleGroupData !=[[0]*40]:
                     print(SingleGroupData)
             finally:
@@ -70,6 +78,12 @@ def translateStr(Str):
     return Temp
 
 def judgeConnectedCOMNum():
+    pass
+
+def strFramesToInt(Str):
+    ##每一帧以“h”开头结尾，开头的h用于判断，
+    ##判断以后丢弃（即不再解析，亦不用做切片分界）
+    
     pass
 
 if __name__ == "__main__":
