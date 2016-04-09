@@ -7,85 +7,74 @@
 ##可以以某个较大的十六进制数作为分解更简单
 ##
 ##注意：某些全局变量，为全局共享资源，如：
-##      FrameperGroup      
+##      OneFrame
+##      SingleGroupData
 ##      GestureNum
 ##      但最终只有某些线程会读取并清空他们
 
 ##TODO：合并到一个文件中并作整合，将三个子函数作为线程
 
-import serial
+import serial,time
 
-SingleGroupData =[[0]*40]
+OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
+SingleGroupData = []
 readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
-FrameperGroup=13
-def readCom(ComNumber="COM3"):
-    print(threading.currentThread().getName()+' On')#打印当前线程名
+def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        print(com.portstr)
-        global SingleGroupData,readCom_StopFlag, FrameperGroup
+        t0=time.clock()
+        j=0
         while True:
-            ##以下两个为全局变量，储存串口读取的字符串和解析后的数据
-            ##帧数同步
-            print(threading.currentThread().getName()+' On')#打印当前线程名
-            try:
-                lock.acquire()
-                while True:
-                    print("Tag the while")
-                    ch = com.read(1)
-                    if ch == b'h':
-                        print("Tag break")
-                        break
-                ##进行阈值判决
-                testFrameStr=com.read(9)#取一帧解析（或不用）判断
-                testFrameData=strFramesToInt(testFrame)
-                if isReceive(testFrameData):
-                    #每帧数据由10个字符组成共13帧，预留一帧同步
-                    SingleGroupStr=com.read(10*FrameperGroup-1)
-                    SingleGroupData=translateStr(SingleGroupStr)
-                if SingleGroupData !=[[0]*40]:
-                    print(SingleGroupData)
-            finally:
-                lock.release()
-            ##TODO:以下为关闭串口读写的条件
-            if readCom_StopFlag:
+            i=0
+            j=j+1
+            OneGroupTemp=[]
+            ##此处必须使用while循环，因为不知何时遇上b'h'
+            while True:
+                ch = com.read(1)
+                if ch == b'h':
+                    i=i+1
+                    testFrameStr=com.read(30)
+                    OneFrame=dataAnalysis(testFrameStr)
+                    
+                    if isReceive(OneFrame):
+                        print(OneFrame)
+                    OneGroupTemp.extend(OneFrame)
+                ##取13帧为一组数据，结果是是1*m维的数据
+                if i == GroupLen:
+                    break
+            SingleGroupData=OneGroupTemp
+            ##测试时间控制，真正程序中删去
+            if time.clock()-t0 > 20:
                 break
     finally:
         if com != None:
             com.close()
 
-def chr3_2int(str_):
-    int_=0
-    sign=1
-    for i in range(3):
-        if str_[i]=='-':
-            sign=-1
-        else:
-            int_=10*int_+int(str_[i])
-    int_ = sign*int_
-    return int_
+##—————————————阈值判决模块—————————————
+##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
+##否则继续判决下一帧
+import numpy
 
-#只能慢慢切片：
-def translateStr(Str):
-    global FrameperGroup
-    Strs=str(Str,"utf-8")
-    #每帧等分三分
-    Temp=[]
-    for i in range(FrameperGroup):
-        for j in range(3):
-            Temp.append(chr3_2int(Strs[j*3+i*10:j*3+3+i*10]))
-    Temp.append(-1)
-    return Temp
+def isReceive(judgedFrame):
+    canReceive = False
+    if sum(judgedFrame[:3]) > 25:
+        canReceive=True
+    return canReceive
+
+def dataAnalysis(OriginalData):
+    #与下位机相对应，此处与TestDataTransfer对应
+    Temp=(OriginalData.strip()).split()
+    Data=[]
+    for i in range(len(Temp)):
+        if Temp[i][0]==50:
+            Data.append(int(Temp[i])-2000)
+        elif Temp[i][0]==49:
+            Data.append(1000-int(Temp[i]))
+    return Data
 
 def judgeConnectedComnum():
     pass
 
-def strFramesToInt(Str):
-    ##每一帧以“h”开头结尾，开头的h用于判断，
-    ##判断以后丢弃（即不再解析，亦不用做切片分界）
-    
-    pass
-
 if __name__ == "__main__":
-    readCom("COM3")
+    readCom()
