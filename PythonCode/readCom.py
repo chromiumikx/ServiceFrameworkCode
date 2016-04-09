@@ -37,11 +37,12 @@ def readCom(ComNumber="COM3"):
                     if ch == b'h':
                         print("Tag break")
                         break
-
+                ##进行阈值判决
                 testFrameStr=com.read(9)#取一帧解析（或不用）判断
                 testFrameData=strFramesToInt(testFrame)
                 if isReceive(testFrameData):
-                    SingleGroupStr=com.read(10*FrameperGroup-1)#每帧数据由10个字符组成共13帧，预留一帧同步
+                    #每帧数据由10个字符组成共13帧，预留一帧同步
+                    SingleGroupStr=com.read(10*FrameperGroup-1)
                     SingleGroupData=translateStr(SingleGroupStr)
                 if SingleGroupData !=[[0]*40]:
                     print(SingleGroupData)
@@ -77,7 +78,7 @@ def translateStr(Str):
     Temp.append(-1)
     return Temp
 
-def judgeConnectedCOMNum():
+def judgeConnectedComnum():
     pass
 
 def strFramesToInt(Str):
