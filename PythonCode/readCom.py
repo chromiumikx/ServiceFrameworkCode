@@ -23,11 +23,8 @@ def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        t0=time.clock()
-        j=0
         while True:
             i=0
-            j=j+1
             OneGroupTemp=[]
             ##此处必须使用while循环，因为不知何时遇上b'h'
             while True:
@@ -44,9 +41,6 @@ def readCom(ComNumber="COM3",GroupLen=13):
                 if i == GroupLen:
                     break
             SingleGroupData=OneGroupTemp
-            ##测试时间控制，真正程序中删去
-            if time.clock()-t0 > 20:
-                break
     finally:
         if com != None:
             com.close()
@@ -66,11 +60,11 @@ def dataAnalysis(OriginalData):
     #与下位机相对应，此处与TestDataTransfer对应
     Temp=(OriginalData.strip()).split()
     Data=[]
-    for i in range(len(Temp)):
-        if Temp[i][0]==50:
-            Data.append(int(Temp[i])-2000)
-        elif Temp[i][0]==49:
-            Data.append(1000-int(Temp[i]))
+    for i in Temp:
+        if i[0]==50:
+            Data.append(int(i)-2000)
+        elif i[0]==49:
+            Data.append(1000-int(i))
     return Data
 
 def saveData(Datas,Path,ActionType):
