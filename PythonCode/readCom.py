@@ -73,8 +73,50 @@ def dataAnalysis(OriginalData):
             Data.append(1000-int(Temp[i]))
     return Data
 
+def saveData(Datas,Path,ActionType):
+    #可以同时加上分类标记（待定），读取时便可以简单读取
+    #一组数据（可能是一帧或13帧或其他）
+    f=open(Path,"a")##以追加的方式写数据
+    temp=[str(i)+" " for i in Datas]
+    f.writelines(temp)
+    f.write(str(ActionType)+" ")
+    f.write("\n")
+    f.close()
+
 def judgeConnectedComnum():
     pass
+
+##将收集标准数据的模块集成在这里，并在这里更改，不再独立成文件夹，后续将在此文件夹移进下位机代码
+def readStandardData(ComNumber="COM3",GroupQuan=1,GroupLen=13,SavePath="data0.txt",ActionType=1):
+    com=None
+    try:
+        com=serial.Serial(ComNumber,9600)
+        t0=time.clock()
+        for j in range(GroupQuan):
+            OneFrame=[]
+            OneGroup=[]
+            i=0
+            ##此处必须使用while循环，因为不知何时遇上b'h'
+            while True:
+                ch = com.read(1)
+                if ch == b'h':
+                    i=i+1
+                    testFrameStr=com.read(30)
+                    OneFrame=dataAnalysis(testFrameStr)
+                    OneGroup.extend(OneFrame)
+                ##取13帧为一组数据，结果是是1*m维的数据
+                if i==GroupLen:
+                    break
+                ##数据频率测试：经测试，基本上能达到帧频率30Hz左右
+                # if i==1000:
+                #     t=time.clock()
+                #     print(t-t0)
+                #     break
+            saveData(OneGroup,SavePath,ActionType)
+            print("saved group %s"%(j))
+    finally:
+        if com != None:
+            com.close()
 
 if __name__ == "__main__":
     readCom()

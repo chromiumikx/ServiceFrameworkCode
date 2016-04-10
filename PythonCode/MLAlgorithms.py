@@ -3,26 +3,31 @@ import numpy as np
 from readDataFromFile import openFilegetData
 from ActiveFunctions import nonlin
 
-def trainNeuralNetwork(PathList):
+def trainNeuralNetwork(PathList="data0.txt"):
     #_________________数据与代码同一目录时用下列代码_________________________
-    data=[]
+    PathsData=[]
+    PathsTags=[]
     ##加载了三组标准输入数据，为一次性代码
     for P in PathList:
-        data=data+(openFilegetData(P))
+        Temp=openFilegetData(P)
+        PathsData.append([i.append(-1) for i in (Temp[0])])
+        ##所有的标记（未转化为多维），全列成一列
+        PathsTags.extend((Temp[1]))
 
     ##快速生成标准输出矩阵（即分类标记）
-    StandardOutput=[[0,0,0]]*21
-    StandardOutput[0:7]=[[0,0,1]]*7
+    StandardOutput=[]
+    ##通过列表生成器，例如用[0,0,1]代替pathtags中的1元素
+    StandardOutput=[dimTrans(i) for i in PathsTags]
 
-    x=np.array(data)
+    x=np.array(PathsData)
     y=np.array(StandardOutput)
 
     np.random.seed(1)
 
     #整个学习网络由两个（可修改成其他深度）权重矩阵（主要）构成，
     #syn0维数是40*40，syn1是40*3
-    InputPoints=40
-    InnerLayerPoints=40
+    InputPoints=100
+    InnerLayerPoints=100
     OutputPoints=3
     syn0=2*np.random.random((InputPoints,InnerLayerPoints))-1
     syn1=2*np.random.random((InnerLayerPoints,OutputPoints))-1
@@ -50,23 +55,28 @@ def trainNeuralNetwork(PathList):
         syn1+=l1.T.dot(l2_delta)
         syn0+=l0.T.dot(l1_delta)
 
-    writefile0 = open("weightsyn0.txt", "w")
-    for i in range(40):
-        for j in range(40):
-            writefile0.write(str(syn0[i][j])+" ")
-        writefile0.write("\n")
-    writefile0.close()
-
-    writefile1 = open("weightsyn1.txt", "w")
-    for i in range(40):
-        for j in range(3):
-            writefile1.write(str(syn1[i][j])+" ")
-        writefile1.write("\n")
-    writefile1.close()
+    saveWeights(syn0,"syn0")
+    saveWeights(syn1,"syn1")
     
     print(l2)
     return (syn0,syn1)
 
+def dimTrans(Dim1):
+    DimN=[]
+    if Dim1==1:
+        DimN=[0,0,1]
+    elif Dim1==2:
+        DimN=[0,1,0]
+    pass
+    return DimN
+
+def saveWeights(WeightsVars=syn0,FileNmae="syn0"):
+    writefile = open((FileNmae+".txt"), "w")
+    for i in syn0:
+        for j in i:
+            writefile.write(j+" ")
+        writefile.write("\n")
+    writefile.close()
 
 if __name__=="__main__":
     trainNeuralNetwork(["Circle.txt","UpDown.txt","LeftRight.txt"])
