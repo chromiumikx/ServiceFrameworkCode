@@ -3,16 +3,18 @@ import numpy as np
 from readDataFromFile import openFilegetData
 from ActiveFunctions import nonlin
 
-def trainNeuralNetwork(PathList="data0.txt"):
+def trainNeuralNetwork(PathList=["data0.txt","data1.txt"]):
     #_________________数据与代码同一目录时用下列代码_________________________
     PathsData=[]
     PathsTags=[]
-    ##加载了三组标准输入数据，为一次性代码
+    ##加载了三组标准输入数据，并增加算法所需（-1）阈值元素，为一次性代码
     for P in PathList:
         Temp=openFilegetData(P)
-        PathsData.append([i.append(-1) for i in (Temp[0])])
+        for i in range(len(Temp[0])):
+            Temp[0][i].append(-1)
+        PathsData.extend(Temp[0])
         ##所有的标记（未转化为多维），全列成一列
-        PathsTags.extend((Temp[1]))
+        PathsTags.extend(Temp[1])
 
     ##快速生成标准输出矩阵（即分类标记）
     StandardOutput=[]
@@ -26,13 +28,13 @@ def trainNeuralNetwork(PathList="data0.txt"):
 
     #整个学习网络由两个（可修改成其他深度）权重矩阵（主要）构成，
     #syn0维数是40*40，syn1是40*3
-    InputPoints=100
-    InnerLayerPoints=100
+    InputPoints=79
+    InnerLayerPoints=79
     OutputPoints=3
     syn0=2*np.random.random((InputPoints,InnerLayerPoints))-1
     syn1=2*np.random.random((InnerLayerPoints,OutputPoints))-1
 
-    for j in range(60000):
+    for j in range(600):
         #正常计算网络各层各节点的值
         l0=x
         l1=nonlin(np.dot(l0,syn0))
@@ -70,13 +72,13 @@ def dimTrans(Dim1):
     pass
     return DimN
 
-def saveWeights(WeightsVars=syn0,FileNmae="syn0"):
+def saveWeights(WeightsVars,FileNmae):
     writefile = open((FileNmae+".txt"), "w")
-    for i in syn0:
+    for i in WeightsVars:
         for j in i:
-            writefile.write(j+" ")
+            writefile.write(str(j)+" ")
         writefile.write("\n")
     writefile.close()
 
 if __name__=="__main__":
-    trainNeuralNetwork(["Circle.txt","UpDown.txt","LeftRight.txt"])
+    data=trainNeuralNetwork()

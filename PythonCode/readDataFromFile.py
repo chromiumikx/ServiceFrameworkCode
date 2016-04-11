@@ -15,20 +15,15 @@ def openFilegetData(Path="data0.txt"):
 
 ##——————————读取训练好的权重矩阵——————————————————
 def readWeights(WeightsPaths):
-    s=[]
-    for path in WeightsPaths:
-        f=open(path,'r')
-        ff=f.readlines()
-        ss=[]
-        for line in ff:
-            sss=line.split(" ")
-            sss.pop(len(sss)-1)
-            for i in range(len(sss)):
-                sss[i]=float(sss[i])
-            ss.append(sss)
-        s.append(ss)
-    return (s)
+    f=open(WeightsPaths,"r")
+    temp=f.readlines()
+    dataread=[]
+    tags=[]
+    for i in temp:
+        dataread.append([float(k) for k in ((i.strip()).split())])
+    f.close()
+    return dataread
 
 if __name__ == "__main__":
-    data,tags = openFilegetData()
-    [c,d] = readWeights(["weightsyn0.txt","weightsyn1.txt"])
+    a=readWeights("syn1.txt")
+    print(len(a))

@@ -23,27 +23,34 @@ def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        while True:
-            i=0
-            OneGroupTemp=[]
-            ##此处必须使用while循环，因为不知何时遇上b'h'
-            while True:
-                ch = com.read(1)
-                if ch == b'h':
-                    i=i+1
-                    testFrameStr=com.read(30)
-                    OneFrame=dataAnalysis(testFrameStr)
-                    
-                    if isReceive(OneFrame):
-                        print(OneFrame)
-                    OneGroupTemp.extend(OneFrame)
-                ##取13帧为一组数据，结果是是1*m维的数据
-                if i == GroupLen:
-                    break
-            SingleGroupData=OneGroupTemp
+        global OneFrame,SingleGroupData
+        while com.read(1)==b'h':
+            i=i+1
+            testFrameStr=com.read(30)
+            OneFrame=dataAnalysis(testFrameStr)
+            ##每一帧都要进行阈值检测
+            if isReceive(OneFrame):
+                readOneGroup(GroupLen)
     finally:
         if com != None:
             com.close()
+
+def readOneGroup(GroupLen):
+    ##此处必须使用while循环，因为不知何时遇上b'h'
+    global OneFrame
+    global SingleGroupData
+    while True:
+            i=0
+            OneGroupTemp=[]
+            while com.read(1)==b'h':
+                i=i+1
+                OneFrameStr=com.read(30)
+                OneFrame=dataAnalysis(OneFrameStr)
+                OneGroupTemp.extend(OneFrame)
+            ##取13帧为一组数据，结果是是1*m维的数据
+                if i == GroupLen:
+                    break
+            SingleGroupData=OneGroupTemp
 
 ##—————————————阈值判决模块—————————————
 ##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
