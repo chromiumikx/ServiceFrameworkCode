@@ -13,90 +13,126 @@ from ActiveFunctions import nonlin
 from readDataFromFile import readWeights
 
 
-SingleGroupData =[[0]*40]
+##____________________包含串口读取以及数据解析两个方法________________________
+##
+##注注注注：数据的帧设计可以不用“-”负号，使用多一位作为标志位，这样更容易处理，
+##降低处理时间和性能消耗
+
+##注意：不一定用符号“h”作为帧分解，转为十六进制传输后，
+##可以以某个较大的十六进制数作为分解更简单
+##
+##注意：某些全局变量，为全局共享资源，如：
+##      OneFrame
+##      SingleGroupData
+##      GestureNum
+##      但最终只有某些线程会读取并清空他们
+
+##TODO：合并到一个文件中并作整合，将三个子函数作为线程
+
+import serial,time
+
+OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
+SingleGroupData = []
 readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
-FrameperGroup=13
-def readCom(ComNumber="COM3"):
-    print(threading.currentThread().getName()+' On')#打印当前线程名
+isReceive_Flag = False
+def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        print(com.portstr)
-        global SingleGroupData,readCom_StopFlag, FrameperGroup
+        print(threading.currentThread().getName()+' On')#打印当前线程名
+        global OneFrame,SingleGroupData
+        global isReceive_Flag
+        t0=time.clock()
         while True:
-            ##以下两个为全局变量，储存串口读取的字符串和解析后的数据
-            ##帧数同步
-            #print(threading.currentThread().getName()+' On')#打印当前线程名
-            try:
-                lock.acquire()
-                while True:
-                    ch = com.read(1)
-                    if ch == b'h':
-                        break
-                SingleGroupStr=com.read(10*FrameperGroup-1)#每帧数据由10个字符组成共13帧，预留一帧同步
-                SingleGroupData=translateStr(SingleGroupStr)
-                # if SingleGroupData !=[[0]*40]:
-                #     print(SingleGroupData)
-            finally:
-                lock.release()
-            ##TODO:以下为关闭串口读写的条件
-            if readCom_StopFlag:
-                break
-
-            #time.sleep(0.05)
+            # if time.clock()-t0 > 30:
+            #     break
+            if com.read(1)==b'h':
+                testFrameStr=com.read(30)
+                OneFrame=dataAnalysis(testFrameStr)
+                ##每一帧都要进行阈值检测
+                isReceive_Flag = isReceive(OneFrame)
+                if isReceive_Flag:
+                    print("Pass Gate",OneFrame)
+                    SingleGroupData = readOneGroup(GroupLen,com)
     finally:
         if com != None:
             com.close()
 
-def chr3_2int(str_):
-    int_=0
-    sign=1
-    for i in range(3):
-        if str_[i]=='-':
-            sign=-1
-        else:
-            int_=10*int_+int(str_[i])
-    int_ = sign*int_
-    return int_
+def readOneGroup(GroupLen,Com):
+    ##此处必须使用while循环，因为不知何时遇上b'h'
+    global OneFrame
+    i=0
+    OneGroupTemp=[]
+    while True:
+        if Com.read(1)==b'h':
+            i=i+1
+            OneFrameStr=Com.read(30)
+            OneFrame=dataAnalysis(OneFrameStr)
+            OneGroupTemp.extend(OneFrame)
+        ##取13帧为一组数据，结果是是1*m维的数据
+        if i == GroupLen:
+            return OneGroupTemp
 
-#只能慢慢切片：
-def translateStr(Str):
-    global FrameperGroup
-    Strs=str(Str,"utf-8")
-    #每帧等分三分
-    Temp=[]
-    for i in range(FrameperGroup):
-        for j in range(3):
-            Temp.append(chr3_2int(Strs[j*3+i*10:j*3+3+i*10]))
-    Temp.append(-1)
-    return Temp
+##—————————————阈值判决模块—————————————
+##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
+##否则继续判决下一帧
+import numpy
+
+def isReceive(judgedFrame):
+    canReceive = False
+    AccGate = 150
+    RotGate = None
+    if sum([abs(i) for i in judgedFrame[:3]]) > 600:
+        canReceive=True
+    return canReceive
+
+def dataAnalysis(OriginalData):
+    #与下位机相对应，此处与TestDataTransfer对应
+    Temp=(OriginalData.strip()).split()
+    Data=[]
+    for i in Temp:
+        if i[0]==50:
+            Data.append(int(i)-2000)
+        elif i[0]==49:
+            Data.append(1000-int(i))
+    return Data
+
+def saveData(Datas,Path,ActionType):
+    #可以同时加上分类标记（待定），读取时便可以简单读取
+    #一组数据（可能是一帧或13帧或其他）
+    f=open(Path,"a")##以追加的方式写数据
+    temp=[str(i)+" " for i in Datas]
+    f.writelines(temp)
+    f.write(str(ActionType)+" ")
+    f.write("\n")
+    f.close()
+
+def judgeConnectedComnum():
+    pass
 
 
 GestureNum = 0
 def classifyGesture():
     print(threading.currentThread().getName()+' On')#打印当前线程名
-    #———————————加载分类器（权重矩阵）——————————————
-    syn1, syn0=readWeights("weightsyn1.txt", "weightsyn0.txt")
 
+    global SingleGroupData
+    global isReceive_Flag
     while True:
-        #print(threading.currentThread().getName()+' On')#打印当前线程名
-        #___________________________Classifier_________________________
-        #TODO：目前只有一个分类算法
-        l0=SingleGroupData
-        l1=nonlin(np.dot(l0,syn0))
-        l2=nonlin(np.dot(l1,syn1))
-        Output=l2
-
-        ##以下为将输出转为动作结果:
-        ##可以增加多层分类
-        ##将分类结果直接编为数字字符
         global GestureNum
-        if Output<0.01:
-            GestureNum=1
-        else:
-            GestureNum=0
+        if isReceive_Flag:
+            isReceive_Flag = False
+            if OneFrame[2] > 0:
+                GestureNum=1
+            else:
+                GestureNum=2
+        time.sleep(0.05)#为让线程不占用全部cpu
 
-        #time.sleep(0.05)#为让线程不占用全部cpu
+
+#TODO:此处两个标记全局变量标记server与client连接开启情况；添加：待后续测试决定；
+BreakCondition = False
+Condition = False
+import json as js
+
 
 #TODO:此处两个标记全局变量标记server与client连接开启情况；添加：待后续测试决定；
 BreakCondition = False
@@ -104,6 +140,8 @@ Condition = False
 def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1):
     print(threading.currentThread().getName()+' On')#打印当前线程名
     global GestureNum, BreakCondition, Condition
+    ##以下为 为API提供全局资源，供用户读取
+    global OneFrame
     HOST=input_HOST
     PORT=input_PORT
     backlog = input_backlog
@@ -130,16 +168,30 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
         conn,addr=s.accept()
         print ("Connected with "+addr[0]+':'+str(addr[1]))
         try:
+            ##以下为指令处理模块，连接SDK中的API
             while True:
                 RequireComm=conn.recv(1024).decode()
                 if RequireComm == "Gesture":
-                    #print("Get cmd of Gesture")
+                    print("Get cmd of Gesture")
                     conn.sendall((str(GestureNum)).encode())
+                    GestureNum=0
+                elif RequireComm == "Accs":
+                    Accs=OneFrame[0:3]
+                    ##还要将此list转成json或其他格式
+                    conn.sendall(js.dumps(Accs))
+                    OneFrame=[[0]*6]
+                elif RequireComm == "Rots":
+                    Rots=OneFrame[0:3]
+                    ##还要将此list转成json或其他格式
+                    conn.sendall(js.dumps(Rots))
+                    OneFrame=[[0]*6]
                 else:
-                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理
-                    conn.sendall(("NA").encode())
+                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令
+                    conn.sendall((" ").encode())
 
-                #time.sleep(0.05)#为让线程不占用全部cpu
+                print(threading.currentThread().getName()+' On')#打印当前线程名
+
+                time.sleep(0.05)#为让线程不占用全部cpu
 
                 if BreakCondition:
                     break        

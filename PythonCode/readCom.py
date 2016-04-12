@@ -19,38 +19,43 @@ import serial,time
 OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
 SingleGroupData = []
 readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
+isReceive_Flag = False
 def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
         global OneFrame,SingleGroupData
-        while com.read(1)==b'h':
-            i=i+1
-            testFrameStr=com.read(30)
-            OneFrame=dataAnalysis(testFrameStr)
-            ##每一帧都要进行阈值检测
-            if isReceive(OneFrame):
-                readOneGroup(GroupLen)
+        global isReceive_Flag
+        t0=time.clock()
+        while True:
+            if time.clock()-t0 > 30:
+                break
+            if com.read(1)==b'h':
+                testFrameStr=com.read(30)
+                OneFrame=dataAnalysis(testFrameStr)
+                ##每一帧都要进行阈值检测
+                isReceive_Flag = isReceive(OneFrame)
+                if isReceive_Flag:
+                    print("Pass Gate",OneFrame)
+                    SingleGroupData = readOneGroup(GroupLen,com)
     finally:
         if com != None:
             com.close()
 
-def readOneGroup(GroupLen):
+def readOneGroup(GroupLen,Com):
     ##此处必须使用while循环，因为不知何时遇上b'h'
     global OneFrame
-    global SingleGroupData
+    i=0
+    OneGroupTemp=[]
     while True:
-            i=0
-            OneGroupTemp=[]
-            while com.read(1)==b'h':
-                i=i+1
-                OneFrameStr=com.read(30)
-                OneFrame=dataAnalysis(OneFrameStr)
-                OneGroupTemp.extend(OneFrame)
-            ##取13帧为一组数据，结果是是1*m维的数据
-                if i == GroupLen:
-                    break
-            SingleGroupData=OneGroupTemp
+        if Com.read(1)==b'h':
+            i=i+1
+            OneFrameStr=Com.read(30)
+            OneFrame=dataAnalysis(OneFrameStr)
+            OneGroupTemp.extend(OneFrame)
+        ##取13帧为一组数据，结果是是1*m维的数据
+        if i == GroupLen:
+            return OneGroupTemp
 
 ##—————————————阈值判决模块—————————————
 ##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
@@ -59,7 +64,9 @@ import numpy
 
 def isReceive(judgedFrame):
     canReceive = False
-    if sum(judgedFrame[:3]) > 25:
+    AccGate = 150
+    RotGate = None
+    if sum([abs(i) for i in judgedFrame[:3]]) > 600:
         canReceive=True
     return canReceive
 

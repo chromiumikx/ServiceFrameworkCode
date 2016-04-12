@@ -1,6 +1,7 @@
 #coding=utf-8
 import socket
 import sys
+import json as js
 
 #warning TODO:编写SDK/API文档
 
@@ -43,7 +44,7 @@ class ClientConnect:
             return "No_Connect"
         flag=True
         receive_data=""
-        while (receive_data=="NA") or (receive_data==""):
+        while (receive_data==" ") or (receive_data==""):
             self.client_socket.sendall(("Gesture").encode())
             receive_data = self.client_socket.recv(1024).decode()
             #print("receive_data:",receive_data)
@@ -51,5 +52,28 @@ class ClientConnect:
         return receive_data
 
     #TODO:向外提供传感器加速度的原始数据；实现：等主要部分完成再加上，需要确定发送的命令，服务器上接受的命令和发送的数据要做添加
-    def getACCs(self):
-        pass
+    def getAccs(self):
+        #若连接建立不成功，直接返回没有连接的提醒代码
+        if not self.isConnect:
+            return "No_Connect"
+        flag=True
+        receive_data=[]
+        while (receive_data==" ") or (receive_data==""):
+            self.client_socket.sendall(("Accs").encode())
+            receive_data = js.loads(self.client_socket.recv(1024))
+            #print("receive_data:",receive_data)
+
+        return receive_data
+
+    def getRots(self):
+        #若连接建立不成功，直接返回没有连接的提醒代码
+        if not self.isConnect:
+            return "No_Connect"
+        flag=True
+        receive_data=[]
+        while (receive_data==" ") or (receive_data==[]):
+            self.client_socket.sendall(("Rots").encode())
+            receive_data = js.loads(self.client_socket.recv(1024))
+            #print("receive_data:",receive_data)
+
+        return receive_data
