@@ -203,25 +203,33 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
 
     s.close()
 
+import matplotlib.pyplot as plt
+
+def plotRealTime():
+    pass
 
 if __name__ == "__main__":
     #开锁保证串口读取完整
     lock=threading.Lock()
     tReadCom=threading.Thread(name="readCom",target=readCom)
     tClassifyGesture=threading.Thread(name="classify",target=classifyGesture)
-    tDataServer=threading.Thread(name="dataServer",target=socketDataServer)
+    #tDataServer=threading.Thread(name="dataServer",target=socketDataServer)
+    tPlot=threading.Thread(name="plotRealTime",target=plotRealTime)
 
     tReadCom.start()
     time.sleep(2)
     tClassifyGesture.start()
     time.sleep(2)
-    tDataServer.start()
+    #tDataServer.start()
+    time.sleep(2)
+    tPlot.start()
 
     print("Tag:运行子线程时是否会还运行主线程")
 
     tReadCom.join()
-    tDataServer.join()
     tClassifyGesture.join()
+    #tDataServer.join()
+    tPlot.join()
 
     while True:
         time.sleep(0.01)
