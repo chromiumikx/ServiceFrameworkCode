@@ -172,7 +172,6 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
             while True:
                 RequireComm=conn.recv(1024).decode()
                 if RequireComm == "Gesture":
-                    print("Get cmd of Gesture")
                     conn.sendall((str(GestureNum)).encode())
                     GestureNum=0
                 elif RequireComm == "Accs":

@@ -43,7 +43,6 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
             while True:
                 RequireComm=conn.recv(1024).decode()
                 if RequireComm == "Gesture":
-                    print("Get cmd of Gesture")
                     conn.sendall((str(GestureNum)).encode())
                     GestureNum=0
                 elif RequireComm == "Accs":
@@ -55,6 +54,9 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                     Rots=OneFrame[0:3]
                     ##还要将此list转成json或其他格式
                     conn.sendall(js.dumps(Rots))
+                    OneFrame=[[0]*6]
+                elif RequireComm == "6Motions":
+                    conn.sendall(js.dumps(OneFrame))
                     OneFrame=[[0]*6]
                 else:
                     #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令

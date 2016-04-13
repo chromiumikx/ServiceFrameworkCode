@@ -11,9 +11,7 @@ x=list()
 y=list()
 
 for i in arange(100):
-    temp_y=np.random.random()
-    x.append(i)
-    y.append(temp_y) # or any arbitrary update to your figure's data
-    i+=1
+    x = [0]
+    y = [0] # or any arbitrary update to your figure's data
     drawnow(makeFig)
     plt.pause(0.001)

@@ -60,7 +60,6 @@ def readOneGroup(GroupLen,Com):
 ##—————————————阈值判决模块—————————————
 ##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
 ##否则继续判决下一帧
-import numpy
 
 def isReceive(judgedFrame):
     canReceive = False
@@ -72,6 +71,7 @@ def isReceive(judgedFrame):
 
 def dataAnalysis(OriginalData):
     #与下位机相对应，此处与TestDataTransfer对应
+    ##必须以增加位数优化处理方法。对齐数据使com.read()时取定长，否则需要一直同步，浪费时间
     Temp=(OriginalData.strip()).split()
     Data=[]
     for i in Temp:

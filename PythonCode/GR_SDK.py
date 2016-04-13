@@ -77,3 +77,16 @@ class ClientConnect:
             #print("receive_data:",receive_data)
 
         return receive_data
+
+        def get6Motions(self):
+        #若连接建立不成功，直接返回没有连接的提醒代码
+        if not self.isConnect:
+            return "No_Connect"
+        flag=True
+        receive_data=[]
+        while (receive_data==" ") or (receive_data==[]):
+            self.client_socket.sendall(("6Motions").encode())
+            receive_data = js.loads(self.client_socket.recv(1024))
+            #print("receive_data:",receive_data)
+
+        return receive_data

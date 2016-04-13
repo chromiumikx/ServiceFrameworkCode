@@ -64,12 +64,12 @@ def trainNeuralNetwork(PathList=["data0.txt","data1.txt"]):
     return (syn0,syn1)
 
 def dimTrans(Dim1):
-    DimN=[]
-    if Dim1==1:
-        DimN=[0,0,1]
-    elif Dim1==2:
-        DimN=[0,1,0]
-    pass
+    ##通过列表生成器，例如用[0,0,1]代替pathtags中的1元素
+    if Dim1 > 7 or Dim1 < 0:
+        return [0,0,0]
+    temp = list(bin(Dim1))
+    temp[temp.index('b')] = '0'
+    DimN = [int(i) for i in temp[-3:]]
     return DimN
 
 def saveWeights(WeightsVars,FileNmae):
