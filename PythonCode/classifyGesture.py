@@ -34,6 +34,7 @@ def classifyGesture():
 
         ##识别模块————2————
         ##识别此帧是否是左右划东的手势
+        global isReceive_Flag
         if isReceive_Flag:
             isReceive_Flag = False
             if OneFrame[2] > 0:
@@ -49,7 +50,7 @@ def classifyGesture():
 
 def outputTrans(Output):
     a = []
-    for i in range(Output):
+    for i in range(len(Output)):
         if Output[i] > 0.5:
             a.append(1)
         else:

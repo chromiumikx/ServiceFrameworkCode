@@ -29,23 +29,18 @@ from readDataFromFile import readWeights
 
 ##TODO：合并到一个文件中并作整合，将三个子函数作为线程
 
-import serial,time
 
 OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
-SingleGroupData = []
+SingleGroupData = ([[0]*78])[0]
 readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
 isReceive_Flag = False
 def readCom(ComNumber="COM3",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        print(threading.currentThread().getName()+' On')#打印当前线程名
         global OneFrame,SingleGroupData
         global isReceive_Flag
-        t0=time.clock()
         while True:
-            # if time.clock()-t0 > 30:
-            #     break
             if com.read(1)==b'h':
                 testFrameStr=com.read(30)
                 OneFrame=dataAnalysis(testFrameStr)
@@ -76,7 +71,6 @@ def readOneGroup(GroupLen,Com):
 ##—————————————阈值判决模块—————————————
 ##用于在接收一帧数据之前，判断这帧数据是否是有效动作，若有则接收13帧（待定）
 ##否则继续判决下一帧
-import numpy
 
 def isReceive(judgedFrame):
     canReceive = False
@@ -88,6 +82,7 @@ def isReceive(judgedFrame):
 
 def dataAnalysis(OriginalData):
     #与下位机相对应，此处与TestDataTransfer对应
+    ##必须以增加位数优化处理方法。对齐数据使com.read()时取定长，否则需要一直同步，浪费时间
     Temp=(OriginalData.strip()).split()
     Data=[]
     for i in Temp:
@@ -111,26 +106,60 @@ def judgeConnectedComnum():
     pass
 
 
+
+
 GestureNum = 0
 def classifyGesture():
-    print(threading.currentThread().getName()+' On')#打印当前线程名
-
+    #加载分类器（权重矩阵）
+    syn0=readWeights("syn0.txt")
+    ##扩展权重矩阵,可改变连接维数
+    syn0_5 = []
+    syn1=readWeights("syn1.txt")
     global SingleGroupData
-    global isReceive_Flag
     while True:
+        #___________________________Classifier_________________________
+        ##识别模块————1————
+        l0=SingleGroupData
+        SingleGroupData = ([[0]*78])[0]##取完数后，将其置零，取全展开
+
+        ##增补算法所需阈值元素（-1）
+        l0.append(-1)
+        l1=nonlin(np.dot(l0,syn0))
+        l2=nonlin(np.dot(l1,syn1))
+        Output=l2
+        ##以下为将模块——1——的输出转为动作结果
+        ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
         global GestureNum
+        TempGestureNum=outputTrans(Output)
+
+        ##识别模块————2————
+        ##识别此帧是否是左右划东的手势
+        global isReceive_Flag
         if isReceive_Flag:
             isReceive_Flag = False
             if OneFrame[2] > 0:
-                GestureNum=1
+                TempGestureNum=1#左滑动
             else:
-                GestureNum=2
+                TempGestureNum=2#右滑动
+
+        ##根据两个模块的识别结果给出最终的动作编号：
+        Condition=False
+        if Condition:
+            GestureNum=0
+            pass
+
         time.sleep(0.05)#为让线程不占用全部cpu
 
+def outputTrans(Output):
+    a = []
+    for i in range(len(Output)):
+        if Output[i] > 0.5:
+            a.append(1)
+        else:
+            a.append(0)
+    return (4*a[0]+2*a[1]+a[2])
 
-#TODO:此处两个标记全局变量标记server与client连接开启情况；添加：待后续测试决定；
-BreakCondition = False
-Condition = False
+
 import json as js
 
 
@@ -138,7 +167,6 @@ import json as js
 BreakCondition = False
 Condition = False
 def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1):
-    print(threading.currentThread().getName()+' On')#打印当前线程名
     global GestureNum, BreakCondition, Condition
     ##以下为 为API提供全局资源，供用户读取
     global OneFrame
@@ -184,11 +212,12 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                     ##还要将此list转成json或其他格式
                     conn.sendall(js.dumps(Rots))
                     OneFrame=[[0]*6]
+                elif RequireComm == "6Motions":
+                    conn.sendall(js.dumps(OneFrame))
+                    OneFrame=[[0]*6]
                 else:
                     #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令
                     conn.sendall((" ").encode())
-
-                print(threading.currentThread().getName()+' On')#打印当前线程名
 
                 time.sleep(0.05)#为让线程不占用全部cpu
 
@@ -212,14 +241,14 @@ if __name__ == "__main__":
     lock=threading.Lock()
     tReadCom=threading.Thread(name="readCom",target=readCom)
     tClassifyGesture=threading.Thread(name="classify",target=classifyGesture)
-    #tDataServer=threading.Thread(name="dataServer",target=socketDataServer)
+    tDataServer=threading.Thread(name="dataServer",target=socketDataServer)
     tPlot=threading.Thread(name="plotRealTime",target=plotRealTime)
 
     tReadCom.start()
     time.sleep(2)
     tClassifyGesture.start()
     time.sleep(2)
-    #tDataServer.start()
+    tDataServer.start()
     time.sleep(2)
     tPlot.start()
 
@@ -227,7 +256,7 @@ if __name__ == "__main__":
 
     tReadCom.join()
     tClassifyGesture.join()
-    #tDataServer.join()
+    tDataServer.join()
     tPlot.join()
 
     while True:

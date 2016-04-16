@@ -3,7 +3,7 @@ import numpy as np
 from readDataFromFile import openFilegetData
 from ActiveFunctions import nonlin
 
-def trainNeuralNetwork(PathList=["data0.txt","data1.txt"]):
+def trainNeuralNetwork(PathList=["data_0.txt"]):
     #_________________数据与代码同一目录时用下列代码_________________________
     PathsData=[]
     PathsTags=[]
@@ -18,7 +18,7 @@ def trainNeuralNetwork(PathList=["data0.txt","data1.txt"]):
 
     ##快速生成标准输出矩阵（即分类标记）
     StandardOutput=[]
-    ##通过列表生成器，例如用[0,0,1]代替pathtags中的1元素
+    ##通过列表生成器，用数组替换每一个元素将其变为二维数组，例如用[0,0,1]代替pathtags中的1元素
     StandardOutput=[dimTrans(i) for i in PathsTags]
 
     x=np.array(PathsData)
@@ -34,7 +34,7 @@ def trainNeuralNetwork(PathList=["data0.txt","data1.txt"]):
     syn0=2*np.random.random((InputPoints,InnerLayerPoints))-1
     syn1=2*np.random.random((InnerLayerPoints,OutputPoints))-1
 
-    for j in range(600):
+    for j in range(10000):
         #正常计算网络各层各节点的值
         l0=x
         l1=nonlin(np.dot(l0,syn0))
