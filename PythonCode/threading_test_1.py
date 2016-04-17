@@ -119,7 +119,8 @@ def classifyGesture():
     while True:
         #___________________________Classifier_________________________
         ##识别模块————1————
-        l0=SingleGroupData        
+        l0=SingleGroupData[:]
+        SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##取完数后，将其置零，取全展开
 
         ##增补算法所需阈值元素（-1）
         l0.append(-1)
@@ -130,17 +131,14 @@ def classifyGesture():
         ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
         GestureNumTemp_1=outputTrans(Output)
 
-        zeros=([[0]*78])[0]
-        print(type(l0))
-        if SingleGroupData == zeros:
+        ##若分类器-1输入为置零值，强制将输出转为0
+        if l0[:-1] == ([[0]*(len(SingleGroupData))])[0]:
             GestureNumTemp_1=0
-            print("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
         if GestureNumTemp_1 == 1:
             print("IM 圆")
         if GestureNumTemp_1 == 2:
             print("三角》》》》》》》》》》》》》")
-        
-        SingleGroupData = zeros##取完数后，将其置零，取全展开
+
 
         ##识别模块————2————
         ##识别此帧是否是左右划东的手势

@@ -19,11 +19,11 @@ def classifyGesture():
         print(threading.currentThread().getName()+' On')#打印当前线程名
         #___________________________Classifier_________________________
         ##识别模块————1————
-        l0=SingleGroupData
-        SingleGroupData = ([[0]*len(l0)])[0]##取完数后，将其置零，取全展开
+        l0=SingleGroupData[:]
+        SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##取完数后，将其置零，取全展开
 
         ##增补算法所需阈值元素（-1）
-        l0.extend(-1)
+        l0.append(-1)
         l1=nonlin(np.dot(l0,syn0))
         l2=nonlin(np.dot(l1,syn1))
         Output=l2
@@ -31,16 +31,10 @@ def classifyGesture():
         ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
         GestureNumTemp_1=outputTrans(Output)
 
-        zeros=([[0]*(len(l0)-1)])[0]
         ##若分类器-1输入为置零值，强制将输出转为0
-        if l0[:-1] == zeros:
+        if l0[:-1] == ([[0]*(len(SingleGroupData))])[0]:
             GestureNumTemp_1=0
-        if GestureNumTemp_1 == 1:
-            print("IM 圆")
-        if GestureNumTemp_1 == 2:
-            print("三角》》》》》》》》》》》》》")
-        
-        SingleGroupData = zeros##取完数后，将其置零，取全展开
+
 
         ##识别模块————2————
         ##识别此帧是否是左右划东的手势
@@ -51,7 +45,7 @@ def classifyGesture():
             else:
                 GestureNumTemp_2=2#右滑动
 
-        ##根据两个模块的识别结果给出最终的动作编号：
+        ##根据两个模块的识别结果给出最终的动作编号
         if Condition:
             pass
 
