@@ -99,7 +99,7 @@ def readStandardData(ComNumber="COM3",GroupLen=13,GroupQuan=1,ActionType=1):
                 if isReceive_Flag:
                     print("Pass Gate",OneFrame)
                     OneGroup = readOneGroup(GroupLen,com)
-                    saveData(OneGroup,SavePath,ActionType)
+                    saveData(OneGroup,ActionType)
                     j = j+1
                     print("saved group %s"%(j))
                 if j >= GroupQuan:
@@ -118,6 +118,18 @@ def saveData(Datas,ActionType):
     f.write("\n")
     f.close()
 
+
+def collectTest():
+    GroupQuan_ = 10
+    while True:
+        ActionType_ = int(input("输入动作类型（1.圆形  2.三角形）："))
+        if ActionType_ == 0:
+            break
+        print("waiting action.............")
+        time.sleep(5)
+        print("collector running..........")
+        readStandardData(GroupQuan=GroupQuan_,ActionType=ActionType_)
+
 if __name__ == "__main__":
     #readCom()
-    readStandardData(GroupQuan=1,ActionType=1)
+    collectTest()

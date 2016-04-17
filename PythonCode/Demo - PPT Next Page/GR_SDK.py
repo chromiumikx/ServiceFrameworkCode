@@ -47,7 +47,7 @@ class ClientConnect:
         while (receive_data==" ") or (receive_data==""):
             self.client_socket.sendall(("Gesture").encode())
             receive_data = self.client_socket.recv(1024).decode()
-            #print("receive_data:",receive_data)
+            print("receive_data:",receive_data)
 
         return receive_data
 

@@ -3,7 +3,7 @@ import numpy as np
 from readDataFromFile import openFilegetData
 from ActiveFunctions import nonlin
 
-def trainNeuralNetwork(PathList=["data_0.txt"]):
+def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
     #_________________数据与代码同一目录时用下列代码_________________________
     PathsData=[]
     PathsTags=[]
@@ -23,6 +23,7 @@ def trainNeuralNetwork(PathList=["data_0.txt"]):
 
     x=np.array(PathsData)
     y=np.array(StandardOutput)
+    print(y)
 
     np.random.seed(1)
 
@@ -34,7 +35,7 @@ def trainNeuralNetwork(PathList=["data_0.txt"]):
     syn0=2*np.random.random((InputPoints,InnerLayerPoints))-1
     syn1=2*np.random.random((InnerLayerPoints,OutputPoints))-1
 
-    for j in range(10000):
+    for j in range(60000):
         #正常计算网络各层各节点的值
         l0=x
         l1=nonlin(np.dot(l0,syn0))
@@ -59,18 +60,25 @@ def trainNeuralNetwork(PathList=["data_0.txt"]):
 
     saveWeights(syn0,"syn0")
     saveWeights(syn1,"syn1")
-    
     print(l2)
+    
     return (syn0,syn1)
 
 def dimTrans(Dim1):
-    ##通过列表生成器，例如用[0,0,1]代替pathtags中的1元素
+    ##通过列表生成器，例如用[-1,-1,1]代替pathtags中的1元素
     if Dim1 > 7 or Dim1 < 0:
         return [0,0,0]
     temp = list(bin(Dim1))
     temp[temp.index('b')] = '0'
-    DimN = [int(i) for i in temp[-3:]]
+    DimN = [converI(i) for i in temp[-3:]]
+    
     return DimN
+
+def converI(i):
+    if i=='0':
+        return -1+0.00000001
+    if i=='1':
+        return 1-0.00000001
 
 def saveWeights(WeightsVars,FileNmae):
     writefile = open((FileNmae+".txt"), "w")

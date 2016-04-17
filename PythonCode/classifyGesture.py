@@ -14,7 +14,7 @@ def classifyGesture():
     ##扩展权重矩阵,可改变连接维数
     syn0_5 = []
     syn1=readWeights("syn1.txt")
-    global SingleGroupData
+    global SingleGroupData,GestureNum,isReceive_Flag
     while True:
         print(threading.currentThread().getName()+' On')#打印当前线程名
         #___________________________Classifier_________________________
@@ -29,18 +29,27 @@ def classifyGesture():
         Output=l2
         ##以下为将模块——1——的输出转为动作结果
         ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
-        global GestureNum
-        TempGestureNum=outputTrans(Output)
+        GestureNumTemp_1=outputTrans(Output)
+
+        zeros=([[0]*(len(l0)-1)])[0]
+        ##若分类器-1输入为置零值，强制将输出转为0
+        if l0[:-1] == zeros:
+            GestureNumTemp_1=0
+        if GestureNumTemp_1 == 1:
+            print("IM 圆")
+        if GestureNumTemp_1 == 2:
+            print("三角》》》》》》》》》》》》》")
+        
+        SingleGroupData = zeros##取完数后，将其置零，取全展开
 
         ##识别模块————2————
         ##识别此帧是否是左右划东的手势
-        global isReceive_Flag
         if isReceive_Flag:
             isReceive_Flag = False
             if OneFrame[2] > 0:
-                TempGestureNum=1#左滑动
+                GestureNumTemp_2=1#左滑动
             else:
-                TempGestureNum=2#右滑动
+                GestureNumTemp_2=2#右滑动
 
         ##根据两个模块的识别结果给出最终的动作编号：
         if Condition:
