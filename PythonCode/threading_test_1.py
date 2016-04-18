@@ -117,50 +117,51 @@ def classifyGesture():
     syn1=readWeights("syn1.txt")
     global SingleGroupData,isReceive_Flag,GestureNum
     while True:
-        #___________________________Classifier_________________________
         ##识别模块————1————
-        l0=SingleGroupData[:]
-        SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##取完数后，将其置零，取全展开
-
-        ##增补算法所需阈值元素（-1）
-        l0.append(-1)
-        l1=nonlin(np.dot(l0,syn0))
-        l2=nonlin(np.dot(l1,syn1))
-        Output=l2
-        ##以下为将模块——1——的输出转为动作结果
-        ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
-        GestureNumTemp_1=outputTrans(Output)
+        ##识别此帧是否是简单手势，若是，不启动识别模块2，否则启动模块2
+        GestureNum = isSimple(isReceive_Flag,OneFrame)
+        if GestureNum is None:
+            GestureNum = classifyModule_2(SingleGroupData)
+        SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##识别完毕后，将该组原始数据置零清除，取全展开
 
         ##若分类器-1输入为置零值，强制将输出转为0
         if l0[:-1] == ([[0]*(len(SingleGroupData))])[0]:
             GestureNumTemp_1=0
-        if GestureNumTemp_1 == 1:
+        if GestureNumTemp_1 == 3:
             print("IM 圆")
-        if GestureNumTemp_1 == 2:
+        if GestureNumTemp_1 == 4:
             print("三角》》》》》》》》》》》》》")
 
+        time.sleep(0.01)#为让线程不占用全部cpu
 
-        ##识别模块————2————
-        ##识别此帧是否是左右划东的手势
-        if isReceive_Flag:
-            isReceive_Flag = False
-            if OneFrame[2] > 0:
-                GestureNumTemp_2=1#左滑动
-            else:
-                GestureNumTemp_2=2#右滑动
+##识别模块————1————
+##识别此帧是否是简单手势，若是，不启动识别模块2，否则启动模块2
+def isSimple(isReceive_Flag_,SingleGroupData_):
+    if isReceive_Flag_:
+        isReceive_Flag_ = False
+        if OneFrame_[2] > 0:
+            GestureNumTemp_1=3#左滑动
+        else:
+            GestureNumTemp_1=4#右滑动
+    return GestureNumTemp_1
 
-        ##根据两个模块的识别结果给出最终的动作编号：
-        Condition=False
-        if Condition:
-            GestureNum=0
-            pass
+##识别模块————2————
+def classifyModule_2(SingleGroupData_):
+    l0=SingleGroupData_[:]
 
-        time.sleep(0.05)#为让线程不占用全部cpu
+    ##增补算法所需阈值元素（-1）
+    l0.append(-1)
+    l1=nonlin(np.dot(l0,syn0))
+    l2=nonlin(np.dot(l1,syn1))
+    Output=l2
+    ##以下为将模块——1——的输出转为动作结果
+    ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
+    return outputTrans(Output)
 
 def outputTrans(Output):
     a = []
     for i in range(len(Output)):
-        if Output[i] > 0.5:
+        if Output[i] > 0:
             a.append(1)
         else:
             a.append(0)
@@ -226,7 +227,7 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                     #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令
                     conn.sendall((" ").encode())
 
-                time.sleep(0.05)#为让线程不占用全部cpu
+                time.sleep(0.01)#为让线程不占用全部cpu
 
                 if BreakCondition:
                     break        

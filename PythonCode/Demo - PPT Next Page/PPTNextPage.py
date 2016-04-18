@@ -16,11 +16,11 @@ while True:
     if dt>120 or Num == "No Connect":
         print("Release connect and quit")
         break
-    if Num == "1":
+    if Num == "3":
         win32api.keybd_event(32,0,0,0)  #空格键位码是32
         win32api.keybd_event(32,0,win32con.KEYEVENTF_KEYUP,0)
 
-    if Num == "2":
+    if Num == "4":
         win32api.keybd_event(38,0,0,0)  #向上箭头键位码是38
         win32api.keybd_event(38,0,win32con.KEYEVENTF_KEYUP,0)
     
