@@ -8,7 +8,7 @@ int i;
 int16_t a[3];
 int16_t g[3];
 uint8_t range_a=1;//设置加速度计读数范围——+-4g
-uint8_t range_g=1;//设置陀螺仪读数范围——+-500 degree/s
+uint8_t range_g=2;//设置陀螺仪读数范围——+-500 degree/s
 
 bool blinkState = false;
 

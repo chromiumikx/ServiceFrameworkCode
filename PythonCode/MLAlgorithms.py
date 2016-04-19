@@ -2,6 +2,8 @@
 import numpy as np
 from readDataFromFile import openFilegetData
 from ActiveFunctions import nonlin
+from pylab import arange, plt
+from drawnow import drawnow
 
 def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
     #_________________数据与代码同一目录时用下列代码_________________________
@@ -23,7 +25,6 @@ def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
 
     x=np.array(PathsData)
     y=np.array(StandardOutput)
-    print(y)
 
     np.random.seed(1)
 
@@ -55,8 +56,8 @@ def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
 
         l1_delta=l1_error*nonlin(l1,True)
 
-        syn1+=l1.T.dot(l2_delta)
-        syn0+=l0.T.dot(l1_delta)
+        syn1 = syn1+l1.T.dot(l2_delta)/100
+        syn0 =syn0+l0.T.dot(l1_delta)/100
 
     saveWeights(syn0,"syn0")
     saveWeights(syn1,"syn1")
@@ -88,5 +89,66 @@ def saveWeights(WeightsVars,FileNmae):
         writefile.write("\n")
     writefile.close()
 
+
+def testFFT():
+    ##注意：共六个变量，每个变量有一定数量的频点，找出差别最大的频点Ki，识别时只要有一定数量的K点即可认为区分开了
+    import matplotlib.pyplot as plt
+    Data_1,tags_1 = openFilegetData("data_1.txt")
+    #Data_2,tags_2 = openFilegetData("data_2.txt")
+
+    ay_f_11 = 0
+    az_f_10 = 0
+    gx_f_0 = 0
+    gx_f_11 = 0
+    gz_f_3 = 0
+    gz_f_10 = 0
+    Judge_tags_1 = []
+    for k in Data_1:
+        fp = []
+        for j in range(6):
+            x = [k[6*i+j]/10 for i in range(int(len(k)/6))]
+            x.extend([[0]*57][0])
+            xf = np.fft.rfft(x)
+            xf_ = 20*np.log10(np.clip(np.abs(xf),1e-20,1e100))
+            fp.append(xf_[:15])
+        ay_f_11 = fp[0][11]
+        az_f_10 = fp[2][10]
+        gx_f_0 = fp[3][0]
+        gx_f_11 = fp[3][11]
+        gz_f_3 = fp[5][3]
+        gz_f_10 = fp[5][10]
+        result = FFTJudger(ay_f_11,az_f_10,gx_f_0,gx_f_11,gz_f_3,gz_f_10)
+        Judge_tags_1.append(result)
+    print(Judge_tags_1)
+    print((len(Data_1)-sum([tags_1[i]-Judge_tags_1[i] for i in range(len(tags_1))]))/len(Data_1))
+
+
+def ByFFT():
+    pass
+
+##判断模块
+def FFTJudger(ay_f_11,az_f_10,gx_f_0,gx_f_11,gz_f_3,gz_f_10):
+    count=0
+    if ay_f_11 > 39:
+        count = count+1
+    if az_f_10 > 37:
+        count = count+1
+    if gx_f_0 > 36:
+        count = count+1
+    if gx_f_11 > 36:
+        count = count+1
+    if gz_f_3 < 38:
+        count = count+1
+    if gz_f_10 > 43:
+        count = count+1
+    Result = 0
+    if count > 2:
+        Result = 1
+    return Result
+
+def isSimple():
+    pass
+
 if __name__=="__main__":
-    data=trainNeuralNetwork()
+    #trainNeuralNetwork()
+    isSimple()

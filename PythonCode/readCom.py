@@ -15,6 +15,7 @@
 ##TODO：合并到一个文件中并作整合，将三个子函数作为线程
 
 import serial,time
+import numpy as np
 
 OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
 SingleGroupData = ([[0]*78])[0]##初始化：要每个元素有实际数，不可用空列表代替
@@ -35,6 +36,7 @@ def readCom(ComNumber="COM3",GroupLen=13):
                 if isReceive_Flag:
                     print("Pass Gate",OneFrame)
                     SingleGroupData = readOneGroup(GroupLen,com)
+                    print(np.var([SingleGroupData[6*i] for i in range(int(len(SingleGroupData)/6))]))
     finally:
         if com != None:
             com.close()
@@ -122,14 +124,11 @@ def saveData(Datas,ActionType):
 def collectTest():
     GroupQuan_ = 10
     while True:
-        ActionType_ = int(input("输入动作类型（1.圆形  2.三角形）："))
+        ActionType_ = int(input("输入动作类型（1.圆形  2.三角形 3.左滑动 4.右滑动）："))
         if ActionType_ == 0:
             break
-        print("waiting action.............")
-        time.sleep(5)
-        print("collector running..........")
         readStandardData(GroupQuan=GroupQuan_,ActionType=ActionType_)
 
 if __name__ == "__main__":
-    #readCom()
-    collectTest()
+    readCom()
+    #collectTest()
