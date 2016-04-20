@@ -17,8 +17,8 @@
 import serial,time
 import numpy as np
 
-OneFrame = []##三个加速度三个角速度，已解码，供后续API制作使用
-SingleGroupData = ([[0]*78])[0]##初始化：要每个元素有实际数，不可用空列表代替
+OneFrame = ([[0]*6])[0]##三个加速度三个角速度，已解码，供后续API制作使用
+SingleGroupData = ([[0]*78])[0]
 readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
 isReceive_Flag = False
 def readCom(ComNumber="COM5",GroupLen=13):
@@ -35,7 +35,6 @@ def readCom(ComNumber="COM5",GroupLen=13):
                 isReceive_Flag = isReceive(OneFrame)
                 if isReceive_Flag:
                     SingleGroupData = readOneGroup(GroupLen,com)
-                    print(np.var([SingleGroupData[6*i+2] for i in range(int(len(SingleGroupData)/6))]))
     finally:
         if com != None:
             com.close()
@@ -78,6 +77,16 @@ def dataAnalysis(OriginalData):
         elif i[0]==49:
             Data.append(1000-int(i))
     return Data
+
+def saveData(Datas,Path,ActionType):
+    #可以同时加上分类标记（待定），读取时便可以简单读取
+    #一组数据（可能是一帧或13帧或其他）
+    f=open(Path,"a")##以追加的方式写数据
+    temp=[str(i)+" " for i in Datas]
+    f.writelines(temp)
+    f.write(str(ActionType)+" ")
+    f.write("\n")
+    f.close()
 
 def judgeConnectedComnum():
     pass
