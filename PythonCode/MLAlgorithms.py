@@ -5,7 +5,7 @@ from ActiveFunctions import nonlin
 from pylab import arange, plt
 from drawnow import drawnow
 
-def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
+def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt","data_3.txt","data_4.txt"]):
     #_________________数据与代码同一目录时用下列代码_________________________
     PathsData=[]
     PathsTags=[]
@@ -61,7 +61,7 @@ def trainNeuralNetwork(PathList=["data_1.txt","data_2.txt"]):
 
     saveWeights(syn0,"syn0")
     saveWeights(syn1,"syn1")
-    print(l2)
+    #print(l2)
     
     return (syn0,syn1)
 
@@ -150,5 +150,5 @@ def isSimple():
     pass
 
 if __name__=="__main__":
-    #trainNeuralNetwork()
-    isSimple()
+    trainNeuralNetwork()
+    #isSimple()

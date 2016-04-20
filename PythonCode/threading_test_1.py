@@ -115,27 +115,14 @@ def classifyGesture():
     ##扩展权重矩阵,可改变连接维数
     syn0_5 = []
     syn1=readWeights("syn1.txt")
-    global OneFrame,SingleGroupData,GestureNum,isReceive_Flag
-    FormerGesturNum = 0
-    t0 = 0
-    t1 = 0
+    global OneFrame,SingleGroupData,GestureNum,isReceive_Flag,GestureNumTemp
     while True:
-        ##识别模块————1————
-        ##识别此帧是否是简单手势，若是，不启动识别模块2，否则启动模块2
-        GestureNum,t1 = isSimple(isReceive_Flag,SingleGroupData,OneFrame)
-
-        if GestureNum == 0:
-            GestureNum,t1 = classifyModule_2(SingleGroupData,syn0,syn1)
+        GestureNum = classifyModule_2(SingleGroupData,syn0,syn1)
         SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##识别完毕后，将该组原始数据置零清除，取全展开
 
-        ##动作过滤，规则：1.3.若相连两个动作一样，则废除当前动作  2. 两个3、4相连，取最后一个  3. 3、4 + 1、2 取前一个
-        if (GestureNum == FormerGesturNum) and (t1-t0 < 1) and GestureNum != 0:
-            GestureNum = 0
-        else:
-            if (GestureNum > 2 and FormerGesturNum > 2) and (t1-t0 < 1) and GestureNum != 0:
-                pass
-            if (GestureNum < 3 and FormerGesturNum > 2) and (t1-t0 < 1) and GestureNum != 0:
-                GestureNum = FormerGesturNum
+        ##只要有动作，则缓存到GestureNumTemp中，以免被过快的识别流淹没
+        if GestureNum != 0:
+            GestureNumTemp = GestureNum
 
         if GestureNum == 1:
             print("IM 圆")
@@ -147,33 +134,15 @@ def classifyGesture():
             print("——————》》》")
 
         time.sleep(0.01)#为让线程不占用全部cpu
-        FormerGesturNum = GestureNum
-        t0 = t1
 
         ##根据两个模块的识别结果给出最终的动作编号
         ##1.圆 2.三角形 3.左滑动 4.右滑动 #5.前进 6.后退
         if True:
             pass
 
-##识别模块————1————
-##识别此帧是否是简单手势，若是，不启动识别模块2，否则启动模块2
-def isSimple(isReceive_Flag_,SingleGroupData_,OneFrame_):
-    GestureNumTemp_1 = 0
-    t = 0
-    if np.var([SingleGroupData[6*i+2] for i in range(int(len(SingleGroupData)/6))])<5000:
-        if isReceive_Flag_:
-            print(OneFrame_[1])
-            if OneFrame_[1] > 250:
-                GestureNumTemp_1 = 4
-            if OneFrame_[1] < -250:
-                GestureNumTemp_1 = 3
-        t = time.clock()
-    return GestureNumTemp_1,t
-
 ##识别模块————2————
 def classifyModule_2(SingleGroupData_,syn0,syn1):
     ##若分类器-1输入为置零值，强制将输出转为0
-    t = 0
     if SingleGroupData_ == ([[0]*(len(SingleGroupData_))])[0]:
         GestureNum = 0
     else:
@@ -185,11 +154,10 @@ def classifyModule_2(SingleGroupData_,syn0,syn1):
         l2=nonlin(np.dot(l1,syn1))
         Output=l2
         GestureNum = outputTrans(Output)
-        t = time.clock()
-    ##以下为将模块——1——的输出转为动作结果
-    ##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
-    return GestureNum,t
+    return GestureNum
 
+##以下为将模块——1——的输出转为动作结果
+##输出总共三位表示，可以一位一位的判断，以下以只判断第三位为例
 def outputTrans(Output):
     a = []
     for i in range(len(Output)):
@@ -199,58 +167,6 @@ def outputTrans(Output):
             a.append(0)
     return (4*a[0]+2*a[1]+a[2])
 
-##识别模块————3————
-##运用频域分析
-def ByFFT(SingleGroupData_):
-    ##若分类器-1输入为置零值，强制将输出转为0
-    if SingleGroupData_ == ([[0]*(len(SingleGroupData_))])[0]:
-        GestureNumTemp_3 = 0
-    else:
-        ay_f_11 = 0
-        az_f_10 = 0
-        gx_f_0 = 0
-        gx_f_11 = 0
-        gz_f_3 = 0
-        gz_f_10 = 0
-        fp = []
-        GestureNumTemp_3 = 0
-        for j in range(6):
-            x = [SingleGroupData_[6*i+j]/10 for i in range(int(len(SingleGroupData_)/6))]
-            x.extend([[0]*57][0])
-            xf = np.fft.rfft(x)
-            xf_ = 20*np.log10(np.clip(np.abs(xf),1e-20,1e100))
-            fp.append(xf_[:15])
-        ay_f_11 = fp[0][11]
-        az_f_10 = fp[2][10]
-        gx_f_0 = fp[3][0]
-        gx_f_11 = fp[3][11]
-        gz_f_3 = fp[5][3]
-        gz_f_10 = fp[5][10]
-        if FFTJudger(ay_f_11,az_f_10,gx_f_0,gx_f_11,gz_f_3,gz_f_10):
-            GestureNumTemp_3 = 2
-        else:
-            GestureNumTemp_3 = 1
-    return GestureNumTemp_3
-
-def FFTJudger(ay_f_11,az_f_10,gx_f_0,gx_f_11,gz_f_3,gz_f_10):
-    count=0
-    if ay_f_11 > 39:
-        count = count+1
-    if az_f_10 > 37:
-        count = count+1
-    if gx_f_0 > 36:
-        count = count+1
-    if gx_f_11 > 36:
-        count = count+1
-    if gz_f_3 < 38:
-        count = count+1
-    if gz_f_10 > 43:
-        count = count+1
-    Result = True
-    if count > 2:
-        Result = False
-    return Result
-
 
 import json as js
 
@@ -258,8 +174,10 @@ import json as js
 #TODO:此处两个标记全局变量标记server与client连接开启情况；添加：待后续测试决定；
 BreakCondition = False
 Condition = False
+##动作缓存
+GestureNumTemp = 0
 def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1):
-    global GestureNum, BreakCondition, Condition
+    global GestureNum, BreakCondition, Condition,GestureNumTemp
     ##以下为 为API提供全局资源，供用户读取
     global OneFrame
     HOST=input_HOST
@@ -292,8 +210,8 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
             while True:
                 RequireComm=conn.recv(1024).decode()
                 if RequireComm == "Gesture":
-                    conn.sendall((str(GestureNum)).encode())
-                    GestureNum=0
+                    conn.sendall((str(GestureNumTemp)).encode())
+                    GestureNumTemp=0
                 elif RequireComm == "Accs":
                     Accs=OneFrame[0:3]
                     ##还要将此list转成json或其他格式
@@ -308,7 +226,8 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                     conn.sendall(js.dumps(OneFrame))
                     OneFrame=[[0]*6]
                 else:
-                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理，并非是说没接到指令
+                    #以下一句只是指接收到的命令不是“Gesture”时所做的处理
+                    #并非是说没接到指令
                     conn.sendall((" ").encode())
 
                 time.sleep(0.01)#为让线程不占用全部cpu
@@ -318,7 +237,7 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
             if Condition:
                 break
         except:
-            conn.close()
+            #conn.close()
             pass
 
     s.close()
