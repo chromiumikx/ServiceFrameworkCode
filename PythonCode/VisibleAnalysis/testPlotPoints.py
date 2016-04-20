@@ -66,7 +66,7 @@ def Loop():
     global OneFrame
     while True:
         y.pop(0)
-        y.append(OneFrame[0])
+        y.append(OneFrame[2])
         line1.set_ydata(y)
         # to refresh the figure by force
         fig.canvas.draw()

@@ -128,5 +128,5 @@ def collectTest():
         readStandardData(GroupQuan=GroupQuan_,ActionType=ActionType_)
 
 if __name__ == "__main__":
-    readCom()
-    #collectTest()
+    #readCom()
+    collectTest()
