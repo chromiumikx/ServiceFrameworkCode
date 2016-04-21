@@ -27,14 +27,26 @@ def readCom(ComNumber="COM5",GroupLen=13):
         com=serial.Serial(ComNumber,9600)
         global OneFrame,SingleGroupData
         global isReceive_Flag
+        
+        t0 = time.clock()
+        k = 0
         while True:
             if com.read(1)==b'h':
                 testFrameStr=com.read(30)
                 OneFrame=dataAnalysis(testFrameStr)
                 ##每一帧都要进行阈值检测
-                isReceive_Flag = isReceive(OneFrame)
+                #isReceive_Flag = isReceive(OneFrame)
                 if isReceive_Flag:
                     SingleGroupData = readOneGroup(GroupLen,com)
+                k = k+1
+                ##帧读写测试
+                t1 = time.clock() - t0
+                if t1 > 40:
+                    print("当前的帧率：",k/t1)
+                    print("当前帧：",OneFrame)
+                if t1 > 60:
+                    break
+
     finally:
         if com != None:
             com.close()
@@ -123,7 +135,7 @@ def saveData(Datas,ActionType):
     f=open("data_%s.txt"%(ActionType),"a")##以追加的方式写数据
     temp=[str(i)+" " for i in Datas]
     f.writelines(temp)
-    f.write(str(ActionType)+" ")
+    f.write(ActionType[-1]+" ")
     f.write("\n")
     f.close()
 
@@ -131,11 +143,11 @@ def saveData(Datas,ActionType):
 def collectTest():
     GroupQuan_ = 10
     while True:
-        ActionType_ = int(input("输入动作类型（1.圆形  2.三角形 3.左滑动 4.右滑动）："))
-        if ActionType_ == 0:
+        ActionType_ = input("输入动作类型（1.圆形  2.三角形 3.左滑动 4.右滑动 5.前缀“_”作为测试数据）：")
+        if ActionType_ == "0":
             break
         readStandardData(GroupQuan=GroupQuan_,ActionType=ActionType_)
 
 if __name__ == "__main__":
-    #readCom()
-    collectTest()
+    readCom()
+    #collectTest()
