@@ -288,26 +288,27 @@ if __name__ == "__main__":
     ##界面————————显示系统实时运行状态，这部分可独立提取除去
     from tkinter import *
     root = Tk()
-    root.iconbitmap('icon.ico')
+    root.iconbitmap('icon-3.ico')
     root.title("GR_Service running...")
-    #root.overrideredirect(True)#窗口无边框
+    #TODO：无边框如何实现？？？
     root.attributes("-alpha", 0.8)#窗口透明度
     root.wm_attributes('-topmost',1)#窗口一直在最上
-    root.geometry("300x130+0+0")                #是x 不是*
+    root.geometry("280x120+0+0")                #是x 不是*
     root.resizable(width=True, height=True) #宽不可变, 高可变,默认为True
 
-    version = Label(root, text="版本0.9", bd=1)
+    version = Label(root, text="软件版本：0.9", bd=1, fg='gray')
     version.grid(row=0, column=0,sticky=W)
 
-    ConnectStatus = Label(root, text="连接状态：", bd=1)
+    ConnectStatus = Label(root, text="连接状态：", fg='gray', bd=1)
     ConnectStatus.grid(row=1, column=0,sticky=W) 
-    getConnectStatus = Label(root, text="Connecting", bd=1,anchor = 'w')
-    getConnectStatus.grid(row=1, column=1) 
+    getConnectStatus = Label(root, text="  连接中",fg='blue', bd=1)
+    getConnectStatus.grid(row=1, column=1,sticky=W) 
 
-    currenAction = Label(root, text="实时数据：", bd=1)
+    ##更新实时数据
+    currenAction = Label(root, text="实时数据：", fg='gray', bd=1)
     currenAction.grid(row=2, column=0,sticky=W) 
-    getNowData = Label(root)
-    getNowData.grid(row=2, column=1) #不能有sticky属性
+    getNowData = Label(root, text="0",fg='blue')
+    getNowData.grid(row=2, column=1,sticky=W) #不能有sticky属性
     ##数据初始化
     time1 = ''
     testFrameStr = ''
@@ -320,16 +321,17 @@ if __name__ == "__main__":
         getNowData.after(200, tick_D)
     tick_D()
 
-    currenAction = Label(root, text="实时动作：", bd=1)
+    ##更新事实动作
+    currenAction = Label(root, text="实时动作：", fg='gray', bd=1)
     currenAction.grid(row=3, column=0,sticky=W) 
-    getcurrenAction = Label(root,anchor = 'w')
-    getcurrenAction.grid(row=3, column=1) #不能有sticky属性
+    getcurrenAction = Label(root,anchor = 'w',fg='blue')
+    getcurrenAction.grid(row=3, column=1,sticky=W) #不能有sticky属性
     ##数据初始化
     time3 = ''
     GestureNumTemp_forUI = 0
     def tick_A():
         global time3,GestureNumTemp_forUI
-        DictGesture = {"0":"无动作","1":"圆形","2":"三角形","3":"<<<左滑动","4":"右滑动>>>","5":"未定义动作","6":"未定义动作"}
+        DictGesture = {"0":"  没有动作","1":"  圆形","2":"  三角形","3":"  <<<左滑动","4":"  右滑动>>>","5":"  未定义动作","6":"  未定义动作"}
         time4 = DictGesture[str(GestureNumTemp_forUI)]
         GestureNumTemp_forUI = 0
         if time4 != time3:
@@ -357,7 +359,7 @@ if __name__ == "__main__":
             break
         root.destroy()
 
-    B = Button(root, text ="完全退出服务程序", command = qiutScv)
+    B = Button(root, text =">使用此按钮完全退出服务程序<", fg='gray', relief = FLAT, command = qiutScv)
     B.grid(row=4, column=1)
 
     root.mainloop()
