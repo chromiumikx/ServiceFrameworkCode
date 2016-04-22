@@ -1,3 +1,6 @@
+##________________________Gesture Recognition Services Component_____________________________
+##主要代码从threading_test_1移植过来
+# -*- coding: UTF8 -*-
 #测试 两个线程一读一取同一变量
 #当增加到3个线程时，有可能堵塞，使socketsenddata线程不能及时发送最新数据
 #所以后续测试若实时性不够，应将读取串口和处理放在同一线程
@@ -264,6 +267,76 @@ if __name__ == "__main__":
     tPlot.start()
 
     print("Tag:运行子线程时是否会还运行主线程")
+
+    ##界面————————显示系统实时运行状态，这部分可独立提取除去
+    from tkinter import *
+    root = Tk()
+    root.iconbitmap('icon.ico')
+    root.title("GR_Service running...")
+    #root.overrideredirect(True)#窗口无边框
+    root.attributes("-alpha", 0.8)#窗口透明度
+    root.wm_attributes('-topmost',1)#窗口一直在最上
+    root.geometry("300x45+0+0")                #是x 不是*
+    root.resizable(width=True, height=True) #宽不可变, 高可变,默认为True
+
+    version = Label(root, text="版本0.9", bd=1)
+    version.grid(row=0, column=0,sticky=W)
+
+    ConnectStatus = Label(root, text="连接状态：", bd=1)
+    ConnectStatus.grid(row=1, column=0,sticky=W) 
+    getConnectStatus = Label(root, text="Connecting", bd=1,anchor = 'w')
+    getConnectStatus.grid(row=1, column=1) 
+
+    currenAction = Label(root, text="实时数据：", bd=1)
+    currenAction.grid(row=2, column=0,sticky=W) 
+    getNowData = Label(root)
+    getNowData.grid(row=2, column=1) #不能有sticky属性
+    ##数据初始化
+    time1 = ''
+    testFrameStr = ''
+    def tick_D():
+        global time1,testFrameStr
+        # 从运行程序的计算机上面获取当前的系统时间
+        time2 = testFrameStr
+        # 如果时间发生变化，代码自动更新显示的系统时间
+        if time2 != time1:
+            time1 = time2
+            getNowData.config(text=time2)
+            # calls itself every 200 milliseconds
+            # to update the time display as needed
+            # could use >200 ms, but display gets jerky
+        getNowData.after(200, tick_D)
+    tick_D()
+
+    currenAction = Label(root, text="实时动作：", bd=1)
+    currenAction.grid(row=3, column=0,sticky=W) 
+    getcurrenAction = Label(root,anchor = 'w')
+    getcurrenAction.grid(row=3, column=1) #不能有sticky属性
+    ##数据初始化
+    time3 = ''
+    def tick_A():
+        global time3,GestureNumTemp
+        # 从运行程序的计算机上面获取当前的系统时间
+        time4 = GestureNumTemp
+        # 如果时间发生变化，代码自动更新显示的系统时间
+        if time4 != time3:
+            time3 = time4
+            getcurrenAction.config(text=time4)
+            # calls itself every 200 milliseconds
+            # to update the time display as needed
+            # could use >200 ms, but display gets jerky
+        getcurrenAction.after(200, tick_A)
+    tick_A()
+
+    ##程序退出按钮（叉按钮不行）
+    def qiutScv():
+        sys.exit()
+    B = Button(root, text ="完全退出服务程序", command = qiutScv)
+    B.grid(row=4, column=1)
+
+    root.mainloop()
+    ##界面————————显示系统实时状态
+
 
     tReadCom.join()
     tClassifyGesture.join()
