@@ -6,12 +6,13 @@ import json as js
 #warning TODO:编写SDK/API文档
 
 class ClientConnect:
-    def __init__(self, host='127.0.0.1', port=50033):
+    def __init__(self, host='127.0.0.1', port=50011):
         self.HOST = host
         self.PORT = port
         self.client_socket=None
         self.isConnect=False
         self.stopConnect=False
+        self.isSocketCreated=False
         self.start_connect()
         
 
@@ -20,16 +21,18 @@ class ClientConnect:
         self.client_socket.close()
 
     def stop(self):
+        #self.client_socket.sendall(("close_socketDataServer").encode())
         self.client_socket.close()
 
     def start_connect(self):
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.isSocketCreated=True
         except socket.error:
             pass
 
         t0 = time.clock()
-        while not self.stopConnect:
+        while (not self.stopConnect) and self.isSocketCreated:
             try:
                 self.isConnect=True
                 self.client_socket.connect((self.HOST, self.PORT))

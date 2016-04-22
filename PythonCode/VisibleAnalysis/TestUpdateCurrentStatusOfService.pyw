@@ -96,50 +96,6 @@ def judgeConnectedComnum():
     pass
 
 
-##将收集标准数据的模块集成在这里，并在这里更改，不再独立成文件夹，后续将在此文件夹移进下位机代码
-def readStandardData(ComNumber="COM5",GroupLen=13,GroupQuan=1,ActionType=1):
-    com=None
-    try:
-        com=serial.Serial(ComNumber,9600)
-        global OneFrame,OneGroup
-        isReceive_Flag = False
-        j = 0
-        while True:
-            if com.read(1)==b'h':
-                testFrameStr=com.read(30)
-                OneFrame=dataAnalysis(testFrameStr)
-                ##每一帧都要进行阈值检测
-                isReceive_Flag = isReceive(OneFrame)
-                if isReceive_Flag:
-                    OneGroup = readOneGroup(GroupLen,com)
-                    saveData(OneGroup,ActionType)
-                    j = j+1
-                    print("saved group %s"%(j))
-                if j >= GroupQuan:
-                    break
-    finally:
-        if com != None:
-            com.close()
-
-def saveData(Datas,ActionType):
-    #可以同时加上分类标记（待定），读取时便可以简单读取
-    #一组数据（可能是一帧或13帧或其他）
-    f=open("data_%s.txt"%(ActionType),"a")##以追加的方式写数据
-    temp=[str(i)+" " for i in Datas]
-    f.writelines(temp)
-    f.write(ActionType[-1]+" ")
-    f.write("\n")
-    f.close()
-
-
-def collectTest():
-    GroupQuan_ = 10
-    while True:
-        ActionType_ = input("输入动作类型（1.圆形  2.三角形 3.左滑动 4.右滑动 5.前缀“_”作为测试数据）：")
-        if ActionType_ == "0":
-            break
-        readStandardData(GroupQuan=GroupQuan_,ActionType=ActionType_)
-
 if __name__ == "__main__":
     import threading
 
@@ -211,7 +167,7 @@ if __name__ == "__main__":
 
     ##程序退出按钮（叉按钮不行）
     def qiutScv():
-        root.close()
+        root.destroy()
         sys.exit(0)
 
     B = Button(root, text ="完全退出服务程序", command = qiutScv)

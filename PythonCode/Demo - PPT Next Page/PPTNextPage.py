@@ -29,6 +29,6 @@ try:
             win32api.keybd_event(VK_CODE["esc"],0,0,0)  #空格键位码是32
             win32api.keybd_event(VK_CODE["esc"],0,win32con.KEYEVENTF_KEYUP,0)
         
-        time.sleep(0.05)
+        time.sleep(0.02)
 finally:
     myclient.stop()

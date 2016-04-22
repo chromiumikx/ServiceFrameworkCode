@@ -33,16 +33,17 @@ from readDataFromFile import readWeights
 ##TODO：合并到一个文件中并作整合，将三个子函数作为线程
 
 
+testFrameStr = ''
 OneFrame = ([[0]*6])[0]##三个加速度三个角速度，已解码，供后续API制作使用
 SingleGroupData = ([[0]*78])[0]
-readCom_StopFlag = False #TODO：此为串口读写线程退出的条件；添加：等待后续整理完决定
 isReceive_Flag = False
+readComQuitedFlag = False
 def readCom(ComNumber="COM5",GroupLen=13):
     com=None
     try:
         com=serial.Serial(ComNumber,9600)
-        global OneFrame,SingleGroupData
-        global isReceive_Flag
+        global OneFrame,SingleGroupData,testFrameStr
+        global isReceive_Flag,SafeQuitFlag,readComQuitedFlag
         while True:
             if com.read(1)==b'h':
                 testFrameStr=com.read(30)
@@ -51,9 +52,14 @@ def readCom(ComNumber="COM5",GroupLen=13):
                 isReceive_Flag = isReceive(OneFrame)
                 if isReceive_Flag:
                     SingleGroupData = readOneGroup(GroupLen,com)
+
+            if SafeQuitFlag:
+                break
     finally:
         if com != None:
             com.close()
+        readComQuitedFlag = True
+        print("readCom Quit\n")
 
 def readOneGroup(GroupLen,Com):
     ##此处必须使用while循环，因为不知何时遇上b'h'
@@ -111,6 +117,7 @@ def judgeConnectedComnum():
 
 
 GestureNum = 0
+classifyQuitedFlag = False
 def classifyGesture():
     print(threading.currentThread().getName()+' On')#打印当前线程名
     #加载分类器（权重矩阵）
@@ -118,7 +125,9 @@ def classifyGesture():
     ##扩展权重矩阵,可改变连接维数
     syn0_5 = []
     syn1=readWeights("syn1.txt")
-    global OneFrame,SingleGroupData,GestureNum,isReceive_Flag,GestureNumTemp
+    global OneFrame,SingleGroupData,GestureNum
+    global isReceive_Flag,GestureNumTemp,GestureNumTemp_forUI
+    global SafeQuitFlag,classifyQuitedFlag
     while True:
         GestureNum = classifyModule_2(SingleGroupData,syn0,syn1)
         SingleGroupData = ([[0]*(len(SingleGroupData))])[0]##识别完毕后，将该组原始数据置零清除，取全展开
@@ -126,6 +135,7 @@ def classifyGesture():
         ##只要有动作，则缓存到GestureNumTemp中，以免被过快的识别流淹没
         if GestureNum != 0:
             GestureNumTemp = GestureNum
+            GestureNumTemp_forUI = GestureNum
 
         if GestureNum == 1:
             print("IM 圆")
@@ -138,10 +148,10 @@ def classifyGesture():
 
         time.sleep(0.01)#为让线程不占用全部cpu
 
-        ##根据两个模块的识别结果给出最终的动作编号
-        ##1.圆 2.三角形 3.左滑动 4.右滑动 #5.前进 6.后退
-        if True:
-            pass
+        if SafeQuitFlag:
+            break
+    classifyQuitedFlag = True
+    print("classify Quit\n")
 
 ##识别模块————2————
 def classifyModule_2(SingleGroupData_,syn0,syn1):
@@ -174,12 +184,11 @@ def outputTrans(Output):
 import json as js
 
 
-#TODO:此处两个标记全局变量标记server与client连接开启情况；添加：待后续测试决定；
-BreakCondition = False
-Condition = False
+
 ##动作缓存
 GestureNumTemp = 0
-def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1):
+socketQuitedFlag = False
+def socketDataServer(input_HOST='127.0.0.1', input_PORT=50011, input_backlog = 2):
     global GestureNum, BreakCondition, Condition,GestureNumTemp
     ##以下为 为API提供全局资源，供用户读取
     global OneFrame
@@ -204,9 +213,11 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
     
     s.listen(backlog)
     print ("Socket is now listening")
-    
+
+    global SafeQuitFlag,socketQuitedFlag
     while True:
         conn,addr=s.accept()
+        print("显示则不阻塞")
         print ("Connected with "+addr[0]+':'+str(addr[1]))
         try:
             ##以下为指令处理模块，连接SDK中的API
@@ -228,6 +239,8 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
                 elif RequireComm == "6Motions":
                     conn.sendall(js.dumps(OneFrame))
                     OneFrame=[[0]*6]
+                elif RequireComm == "close_socketDataServer":
+                    break
                 else:
                     #以下一句只是指接收到的命令不是“Gesture”时所做的处理
                     #并非是说没接到指令
@@ -235,15 +248,15 @@ def socketDataServer(input_HOST='127.0.0.1', input_PORT=50033, input_backlog = 1
 
                 time.sleep(0.01)#为让线程不占用全部cpu
 
-                if BreakCondition:
-                    break        
-            if Condition:
-                break
         except:
-            #conn.close()
+            conn.close()
             pass
 
+        if SafeQuitFlag:
+            break
     s.close()
+    socketQuitedFlag = True
+    print("socket Quit\n")
 
 import matplotlib.pyplot as plt
 
@@ -251,19 +264,23 @@ def plotRealTime():
     pass
 
 if __name__ == "__main__":
-    #开锁保证串口读取完整
-    lock=threading.Lock()
+    SafeQuitFlag = False
     tReadCom=threading.Thread(name="readCom",target=readCom)
     tClassifyGesture=threading.Thread(name="classify",target=classifyGesture)
     tDataServer=threading.Thread(name="dataServer",target=socketDataServer)
     tPlot=threading.Thread(name="plotRealTime",target=plotRealTime)
 
+    tReadCom.setDaemon(True)
+    tClassifyGesture.setDaemon(True)
+    tDataServer.setDaemon(True)
+    tPlot.setDaemon(True)
+
     tReadCom.start()
-    time.sleep(2)
+    time.sleep(1)
     tClassifyGesture.start()
-    time.sleep(2)
+    time.sleep(1)
     tDataServer.start()
-    time.sleep(2)
+    time.sleep(1)
     tPlot.start()
 
     print("Tag:运行子线程时是否会还运行主线程")
@@ -276,7 +293,7 @@ if __name__ == "__main__":
     #root.overrideredirect(True)#窗口无边框
     root.attributes("-alpha", 0.8)#窗口透明度
     root.wm_attributes('-topmost',1)#窗口一直在最上
-    root.geometry("300x45+0+0")                #是x 不是*
+    root.geometry("300x130+0+0")                #是x 不是*
     root.resizable(width=True, height=True) #宽不可变, 高可变,默认为True
 
     version = Label(root, text="版本0.9", bd=1)
@@ -296,15 +313,10 @@ if __name__ == "__main__":
     testFrameStr = ''
     def tick_D():
         global time1,testFrameStr
-        # 从运行程序的计算机上面获取当前的系统时间
         time2 = testFrameStr
-        # 如果时间发生变化，代码自动更新显示的系统时间
         if time2 != time1:
             time1 = time2
             getNowData.config(text=time2)
-            # calls itself every 200 milliseconds
-            # to update the time display as needed
-            # could use >200 ms, but display gets jerky
         getNowData.after(200, tick_D)
     tick_D()
 
@@ -314,23 +326,37 @@ if __name__ == "__main__":
     getcurrenAction.grid(row=3, column=1) #不能有sticky属性
     ##数据初始化
     time3 = ''
+    GestureNumTemp_forUI = 0
     def tick_A():
-        global time3,GestureNumTemp
-        # 从运行程序的计算机上面获取当前的系统时间
-        time4 = GestureNumTemp
-        # 如果时间发生变化，代码自动更新显示的系统时间
+        global time3,GestureNumTemp_forUI
+        DictGesture = {"0":"无动作","1":"圆形","2":"三角形","3":"<<<左滑动","4":"右滑动>>>","5":"未定义动作","6":"未定义动作"}
+        time4 = DictGesture[str(GestureNumTemp_forUI)]
+        GestureNumTemp_forUI = 0
         if time4 != time3:
             time3 = time4
             getcurrenAction.config(text=time4)
-            # calls itself every 200 milliseconds
-            # to update the time display as needed
-            # could use >200 ms, but display gets jerky
         getcurrenAction.after(200, tick_A)
     tick_A()
 
     ##程序退出按钮（叉按钮不行）
+    SafeQuitFlag = False
     def qiutScv():
-        sys.exit()
+        global SafeQuitFlag,readComQuitedFlag,classifyQuitedFlag,socketQuitedFlag
+        SafeQuitFlag = True
+        print("I'm Buttoned")
+        ##以下处理socketAccept阻塞无法退出线程的情况
+        host = '127.0.0.1'
+        port = 50011
+        StopTheSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        StopTheSocket.connect((host,port))
+        StopTheSocket.sendall(("close_socketDataServer").encode())
+        StopTheSocket.close()
+        while readComQuitedFlag and  socketQuitedFlag:
+            print("myself Quit")
+            sys.exit(0)
+            break
+        root.destroy()
+
     B = Button(root, text ="完全退出服务程序", command = qiutScv)
     B.grid(row=4, column=1)
 
@@ -338,10 +364,10 @@ if __name__ == "__main__":
     ##界面————————显示系统实时状态
 
 
+
     tReadCom.join()
     tClassifyGesture.join()
     tDataServer.join()
     tPlot.join()
 
-    while True:
-        time.sleep(0.01)
+    time.sleep(0.01)
