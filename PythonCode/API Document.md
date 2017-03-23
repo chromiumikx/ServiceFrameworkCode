@@ -1,6 +1,7 @@
 # API文档
 
 ## 简要说明：
+
 > 本项目提供手势操作的基本组件，包括从传感器、控制芯片、蓝牙收发模块的硬件部分和控制、收发、识别、连接等软件部分。
 
 ## API列表：
@@ -30,7 +31,7 @@
 
 >1. standard data collect and mark
 
->2. nural network trainning
+>2. neural network trainning
 
 >3. save and get the nets after train and before use it
 
@@ -44,7 +45,7 @@
 
 >4. read nets(weights)
 
->5. recognition by nural network
+>5. recognition by neural network
 
 >6. show system information by tk
 
