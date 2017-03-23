@@ -2,6 +2,7 @@
 
 ## 简要说明：
 > 本项目提供手势操作的基本组件，包括从传感器、控制芯片、蓝牙收发模块的硬件部分和控制、收发、识别、连接等软件部分。
+
 ## API列表：
 >getGesture:获取当前手势，无手势或未知手势返回None
 
@@ -16,38 +17,38 @@
 ## 系统架构：
 ### train:
 
->>1.standard data collect and mark
+>1.standard data collect and mark
 
->>2.nural network trainning
+>2.nural network trainning
 
->>3.save and get the nets after train and before use it
+>3.save and get the nets after train and before use it
 
 ### for use:
 
->>hardwear
+(1). *hardwear*
 
->>>1.sensor
+>1. sensor
 
->>>2.control chip
+>2. control chip
 
->>>3.bluetooth
+>3. bluetooth
 
->>softwear
+(2). *softwear*
 
->>>1.control chip codes
+>1. control chip codes
 
->>>2.judge validity and read the COM
+>2. judge validity and read the COM
 
->>>3.analysis data from COM
+>3. analysis data from COM
 
->>>4.read nets(weights)
+>4. read nets(weights)
 
->>>5.recognition by nural network
+>5. recognition by nural network
 
->>>6.show system information by tk
+>6. show system information by tk
 
->>>7.data communication by socket
+>7. data communication by socket
 
->>>8.real-timeing by threading module
+>8. real-timeing by threading module
 
->>>9.quit the service safely
+>9. quit the service safely
